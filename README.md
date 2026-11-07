@@ -32,10 +32,10 @@ tools/                PC 侧测试与导出工具
 ## 构建与烧录
 
 - IDE：IAR EWARM 8.32，打开 `EWARM/receive.ewp`，配置 `receive`
-- 命令行编译：
+- 命令行编译（项目路径需用绝对路径；相对路径在全新克隆上会解析不到 `TouchGFX` 源文件）：
 
 ```
-IarBuild.exe EWARM/receive.ewp -build receive
+IarBuild.exe <仓库路径>\EWARM\receive.ewp -build receive
 ```
 
 - 烧录（ST-Link，SWD）：
