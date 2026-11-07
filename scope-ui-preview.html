@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>远程数据采集系统 · 显示端界面提案</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 700px at 30% 0%, #12202a 0%, #080d12 55%, #04070a 100%);
+    color: #d9e7ef;
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  .page { max-width: 1460px; margin: 0 auto; padding: 34px 28px 60px; }
+  header h1 {
+    margin: 0 0 8px;
+    font-size: 26px; font-weight: 600; letter-spacing: .5px;
+  }
+  header p {
+    margin: 0; color: #7f95a4; font-size: 14px; line-height: 1.6;
+  }
+  header p b { color: #cfe4ee; font-weight: 500; }
+  .stage {
+    display: flex; gap: 34px; align-items: flex-start;
+    margin-top: 26px; flex-wrap: wrap;
+  }
+  .device-wrap { flex: 0 0 auto; }
+  .device {
+    padding: 20px 22px 14px;
+    background: linear-gradient(180deg, #1a242c 0%, #0d151a 100%);
+    border: 1px solid #2c3d47;
+    border-radius: 16px;
+    box-shadow:
+      0 30px 60px rgba(0,0,0,.55),
+      inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .screen {
+    position: relative;
+    background: #000;
+    border-radius: 3px;
+    padding: 3px;
+    box-shadow: inset 0 0 0 1px #000, 0 0 22px rgba(70,190,255,.07);
+  }
+  canvas {
+    display: block;
+    width: 960px; height: 544px;
+    max-width: 78vw;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  .caption {
+    display: flex; justify-content: space-between;
+    padding: 10px 2px 0;
+    font-size: 11px; letter-spacing: .12em;
+    color: #5f7785; text-transform: uppercase;
+  }
+  .caption span:last-child { color: #7d97a6; }
+  .hint {
+    margin-top: 14px; font-size: 12.5px; color: #6f8794; line-height: 1.7;
+  }
+  .hint kbd {
+    font-family: inherit; font-size: 12px;
+    background: #14232d; border: 1px solid #2b4552;
+    border-radius: 4px; padding: 1px 6px; color: #bcd3df;
+  }
+  aside { flex: 1 1 340px; min-width: 320px; }
+  aside h2 {
+    font-size: 14px; letter-spacing: .16em; text-transform: uppercase;
+    color: #7e97a5; margin: 0 0 14px; font-weight: 600;
+  }
+  .note {
+    display: flex; gap: 12px;
+    padding: 13px 14px 14px;
+    background: linear-gradient(180deg, rgba(22,36,46,.72), rgba(12,20,26,.72));
+    border: 1px solid #1e333e;
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  .note .n {
+    flex: 0 0 24px; height: 24px; border-radius: 6px;
+    background: #0f2b33; color: #45d3e8;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .note h3 { margin: 0 0 4px; font-size: 13.5px; font-weight: 600; color: #dcebf3; }
+  .note p { margin: 0; font-size: 12.5px; line-height: 1.65; color: #8ba2b0; }
+  .note .cost {
+    display: inline-block; margin-top: 6px; font-size: 11px;
+    color: #6fd9a3; background: #0d2c22; border: 1px solid #164a37;
+    border-radius: 4px; padding: 1px 6px;
+  }
+  .note .cost.mid { color: #ffc845; background: #2c2409; border-color: #4d3f0e; }
+  .ref {
+    margin-top: 18px; padding: 12px 14px;
+    border-left: 2px solid #2b4552;
+    font-size: 12.5px; line-height: 1.7; color: #7f95a4;
+  }
+  .ref b { color: #b9d1de; font-weight: 500; }
+  @media (max-width: 1100px) {
+    .stage { flex-direction: column; }
+    canvas { max-width: 92vw; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>显示端界面 · 实时预览</h1>
+    <p>按 <b>480 × 272 / RGB565 / 5×7 点阵 / 单缓冲直绘</b> 做的可交互原型，点击画面里的按键即可切换时基、通道和触发菜单。</p>
+  </header>
+
+  <div class="stage">
+    <div class="device-wrap">
+      <div class="device">
+        <div class="screen"><canvas id="lcd" width="960" height="544"></canvas></div>
+        <div class="caption"><span>STM32F746G-DISCO</span><span>480 × 272 · 30 FPS</span></div>
+      </div>
+      <div class="hint">
+        <kbd>10M</kbd><kbd>5M</kbd><kbd>1M</kbd><kbd>500U</kbd><kbd>100U</kbd> 切时基 ·
+        <kbd>CH1</kbd><kbd>CH2</kbd><kbd>D0</kbd><kbd>D1</kbd><kbd>D2</kbd> 开关通道 ·
+        <kbd>TRIG</kbd> 弹出触发设置 · <kbd>SAVE</kbd> 模拟导出
+      </div>
+    </div>
+
+    <aside>
+      <h2>改进点</h2>
+
+      <div class="note">
+        <div class="n">1</div>
+        <div>
+          <h3>波形区全宽 + 上下对半</h3>
+          <p>去掉右侧按钮列，模拟区从 340×216 改成 472×108，数字区从底部 30px 抬到 90px（每路 30px）；500 点仍铺满一屏，模拟和数字共用同一条时间轴。</p>
+          <span class="cost mid">布局改动大</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="n">2</div>
+        <div>
+          <h3>通道用固定颜色串起来</h3>
+          <p>CH1 琥珀、CH2 青、D0 绿、D1 黄绿、D2 紫：顶部按钮、曲线、底部读数全用同一色。参考图那种彩色块一眼就能对上通道，比全灰按钮清楚得多。</p>
+          <span class="cost">只改配色，成本低</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="n">3</div>
+        <div>
+          <h3>曲线加一圈暗色描边</h3>
+          <p>2px 亮线外再叠 1px 同色暗描边，暗底上看着更粗、更“发光”；单缓冲也不会显细。代价是每列多一次 fillRect。</p>
+          <span class="cost">每列 +1 次矩形</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="n">4</div>
+        <div>
+          <h3>时间刻度搬进网格</h3>
+          <p>网格左下 0、中间半屏、右下满屏时间，跟着时基按钮变；像参考图的 50ns / 100ns，读波形时不用回头找按钮。</p>
+          <span class="cost">3 段文字</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="n">5</div>
+        <div>
+          <h3>测量值改成底部两行</h3>
+          <p>第一行 CH1/CH2 的 Vpp 和频率，第二行三路数字量的频率和正脉宽；测不到 2 个边沿时显示 <b>---</b>，不再让读数乱跳。</p>
+          <span class="cost mid">需改 measure()</span>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="n">6</div>
+        <div>
+          <h3>状态收进底栏</h3>
+          <p>帧号 / CRC / DROP / 来源 / FPS 一行收掉，顶部只留一个 LINK 绿点；标题栏不再为“LINK 12345”单独开一块刷新区。</p>
+          <span class="cost">顺便修掉 LINK 残影</span>
+        </div>
+      </div>
+
+      <div class="ref">
+        <b>参考图取舍：</b>搬了它的彩色通道条、亮色粗线、网格内时间标注、底部测量行和状态行；
+        没搬它的数字总线（我们只有 3 路数字量）和 F-/F+ 频率输入（采集端还不能改频）。
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+/* ======================= 基础绘图（5×7 点阵） ======================= */
+const W = 480, H = 272, SCALE = 2;
+const cv = document.getElementById('lcd');
+const ctx = cv.getContext('2d');
+ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+ctx.imageSmoothingEnabled = false;
+
+const C = {
+  bg:      '#050a0e',
+  strip:   '#0f1a22',
+  panel:   '#0b141b',
+  border:  '#1b303b',
+  grid:    '#0f1e27',
+  gridMaj: '#1b3743',
+  center:  '#23505d',
+  text:    '#d9e7ef',
+  dim:     '#6d8593',
+  faint:   '#405663',
+  ch1:     '#ffc845', ch1h: '#4a3811', ch1d: '#332809',
+  ch2:     '#3ad3ff', ch2h: '#0d4254', ch2d: '#0a3542',
+  d0:      '#39f0a2', d0h:  '#0d4a33', d0d:  '#0a3a28',
+  d1:      '#a9e85f', d1h:  '#374713', d1d:  '#2b3810',
+  d2:      '#c89bff', d2h:  '#3a2a56', d2d:  '#2c2142',
+  accent:  '#ff9a3c', accentDim: '#4a3016',
+  btn:     '#14232d', btnBd: '#2b4552',
+  tb:      '#0d5468', tbBd:  '#37b6d6', tbTx: '#dff7ff',
+  good:    '#39f0a2'
+};
+
+const FONT = {
+  ' ': [0,0,0,0,0,0,0],
+  '-': [0,0,0,0x1F,0,0,0],
+  '+': [0,0x04,0x04,0x1F,0x04,0x04,0],
+  '.': [0,0,0,0,0,0x0C,0x0C],
+  '/': [0x01,0x02,0x02,0x04,0x08,0x08,0x10],
+  ':': [0,0x0C,0x0C,0,0x0C,0x0C,0],
+  '%': [0x19,0x1A,0x02,0x04,0x08,0x0B,0x13],
+  '>': [0x08,0x04,0x02,0x01,0x02,0x04,0x08],
+  '0': [0x0E,0x11,0x13,0x15,0x19,0x11,0x0E],
+  '1': [0x04,0x0C,0x04,0x04,0x04,0x04,0x0E],
+  '2': [0x0E,0x11,0x01,0x02,0x04,0x08,0x1F],
+  '3': [0x1E,0x01,0x01,0x0E,0x01,0x01,0x1E],
+  '4': [0x02,0x06,0x0A,0x12,0x1F,0x02,0x02],
+  '5': [0x1F,0x10,0x1E,0x01,0x01,0x11,0x0E],
+  '6': [0x06,0x08,0x10,0x1E,0x11,0x11,0x0E],
+  '7': [0x1F,0x01,0x02,0x04,0x08,0x08,0x08],
+  '8': [0x0E,0x11,0x11,0x0E,0x11,0x11,0x0E],
+  '9': [0x0E,0x11,0x11,0x0F,0x01,0x02,0x0C],
+  'A': [0x0E,0x11,0x11,0x1F,0x11,0x11,0x11],
+  'B': [0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E],
+  'C': [0x0E,0x11,0x10,0x10,0x10,0x11,0x0E],
+  'D': [0x1E,0x11,0x11,0x11,0x11,0x11,0x1E],
+  'E': [0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F],
+  'F': [0x1F,0x10,0x10,0x1E,0x10,0x10,0x10],
+  'G': [0x0E,0x11,0x10,0x17,0x11,0x11,0x0F],
+  'H': [0x11,0x11,0x11,0x1F,0x11,0x11,0x11],
+  'I': [0x1F,0x04,0x04,0x04,0x04,0x04,0x1F],
+  'J': [0x07,0x02,0x02,0x02,0x02,0x12,0x0C],
+  'K': [0x11,0x12,0x14,0x18,0x14,0x12,0x11],
+  'L': [0x10,0x10,0x10,0x10,0x10,0x10,0x1F],
+  'M': [0x11,0x1B,0x15,0x15,0x11,0x11,0x11],
+  'N': [0x11,0x19,0x15,0x13,0x11,0x11,0x11],
+  'O': [0x0E,0x11,0x11,0x11,0x11,0x11,0x0E],
+  'P': [0x1E,0x11,0x11,0x1E,0x10,0x10,0x10],
+  'Q': [0x0E,0x11,0x11,0x11,0x15,0x12,0x0D],
+  'R': [0x1E,0x11,0x11,0x1E,0x14,0x12,0x11],
+  'S': [0x0F,0x10,0x10,0x0E,0x01,0x01,0x1E],
+  'T': [0x1F,0x04,0x04,0x04,0x04,0x04,0x04],
+  'U': [0x11,0x11,0x11,0x11,0x11,0x11,0x0E],
+  'V': [0x11,0x11,0x11,0x11,0x11,0x0A,0x04],
+  'W': [0x11,0x11,0x11,0x11,0x15,0x15,0x11],
+  'X': [0x11,0x11,0x0A,0x04,0x0A,0x11,0x11],
+  'Y': [0x11,0x11,0x0A,0x04,0x04,0x04,0x04],
+  'Z': [0x1F,0x01,0x02,0x04,0x08,0x10,0x1F]
+};
+
+function rect(x, y, w, h, c) {
+  if (w <= 0 || h <= 0) return;
+  ctx.fillStyle = c;
+  ctx.fillRect(x, y, w, h);
+}
+function frame(x, y, w, h, c) {
+  rect(x, y, w, 1, c); rect(x, y + h - 1, w, 1, c);
+  rect(x, y, 1, h, c); rect(x + w - 1, y, 1, h, c);
+}
+function textWidth(s) { return s.length * 6 - 1; }
+function text(x, y, s, c, sc) {
+  sc = sc || 1;
+  s = String(s).toUpperCase();
+  for (let k = 0; k < s.length; k++) {
+    const g = FONT[s[k]] || FONT[' '];
+    for (let r = 0; r < 7; r++) {
+      const bits = g[r];
+      for (let col = 0; col < 5; col++) {
+        if (bits & (0x10 >> col)) rect(x + col * sc, y + r * sc, sc, sc, c);
+      }
+    }
+    x += 6 * sc;
+  }
+}
+function textC(cx, y, s, c) { text(cx - textWidth(s) / 2, y, s, c); }
+function pad(n, w) { return String(n).padStart(w, '0'); }
+
+/* ======================= 状态与数据 ======================= */
+const TB = [
+  { us: 10000, name: '10M' }, { us: 5000, name: '5M' }, { us: 1000, name: '1M' },
+  { us: 500, name: '500U' }, { us: 100, name: '100U' }
+];
+const winSec = i => TB[i].us * 10 / 1e6;      // 一屏时间 = 10 格
+
+const N = 500;
+const st = {
+  tb: 0,
+  ch1: true, ch2: true,
+  dig: [true, true, true],
+  trigSrc: 0, trigEdge: 0, trigMode: 0, trigLevel: 2048,
+  menu: false,
+  frames: 0, drops: 0, crc: 0, seq: 0,
+  saveUntil: 0,
+  t0: 0
+};
+
+const buf1 = new Float32Array(N);
+const buf2 = new Float32Array(N);
+const bufD = [new Uint8Array(N), new Uint8Array(N), new Uint8Array(N)];
+let meas = { v1: 0, f1: 0, v2: 0, f2: 0, fd: [0, 0, 0], pw: [0, 0, 0] };
+
+function buildSamples() {
+  const win = winSec(st.tb);
+  const dt = win / (N - 1);
+  for (let i = 0; i < N; i++) {
+    const u = st.t0 + i * dt;
+    buf1[i] = 2048 + 900 * Math.sin(2 * Math.PI * 20 * u);
+    buf2[i] = (((5 * u) % 1 + 1) % 1) < 0.5 ? 3300 : 600;
+    bufD[0][i] = (((125 * u) % 1 + 1) % 1) < 0.5 ? 1 : 0;
+    bufD[1][i] = (((40 * u) % 1 + 1) % 1) < 0.5 ? 1 : 0;
+    bufD[2][i] = (((10 * u) % 1 + 1) % 1) < 0.5 ? 1 : 0;
+  }
+  meas = measure(dt);
+}
+
+function vpp(a) {
+  let lo = 4095, hi = 0;
+  for (let i = 0; i < N; i++) { const v = a[i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+  return (hi - lo) * 3300 / 4095;
+}
+
+/* 上升沿计数 + 首末间隔求频率, 与固件里的双沿法一致 */
+function freqRising(a, dt, mid) {
+  let n = 0, first = -1, last = -1;
+  for (let i = 1; i < N; i++) {
+    if (a[i - 1] <= mid && a[i] > mid) { if (first < 0) first = i; last = i; n++; }
+  }
+  if (n < 2 || last <= first) return 0;
+  return (n - 1) / ((last - first) * dt);
+}
+function digFreq(a, dt) { return freqRising(a, dt, 0.5); }
+function digPulse(a, dt) {
+  for (let i = 1; i < N; i++) {
+    if (a[i - 1] === 0 && a[i] === 1) {
+      for (let j = i; j < N; j++) if (a[j] === 0) return (j - i) * dt * 1e6;
+      break;
+    }
+  }
+  return 0;
+}
+
+function measure(dt) {
+  const r = {
+    v1: st.ch1 ? vpp(buf1) : 0, f1: st.ch1 ? freqRising(buf1, dt, 2048) : 0,
+    v2: st.ch2 ? vpp(buf2) : 0, f2: st.ch2 ? freqRising(buf2, dt, 2048) : 0,
+    fd: [0, 0, 0], pw: [0, 0, 0]
+  };
+  for (let c = 0; c < 3; c++) {
+    if (!st.dig[c]) continue;
+    r.fd[c] = digFreq(bufD[c], dt);
+    r.pw[c] = digPulse(bufD[c], dt);
+  }
+  return r;
+}
+
+function fmtVpp(mv) { return (mv / 1000).toFixed(2) + 'V'; }
+function fmtHz(hz) {
+  if (!hz) return '---';
+  if (hz >= 1000) return (hz / 1000).toFixed(2) + 'KHZ';
+  if (hz >= 100) return hz.toFixed(1) + 'HZ';
+  return hz.toFixed(2) + 'HZ';
+}
+function fmtPulse(us) {
+  if (!us) return '---';
+  if (us >= 1000) return (us / 1000).toFixed(2) + 'MS';
+  return Math.round(us) + 'US';
+}
+
+/* ======================= 画面 ======================= */
+const hits = [];
+let dotPhase = 0;
+
+const STRIP_H = 28;
+const PX = 4, PY = 32, PW = 472, PH = 108;   /* 模拟区 */
+const YTOP = 36, YBOT = 136;
+const DIGY = 144, LANEH = 30;                /* 数字区: 3 × 30px, 和模拟区接近对半 */
+
+function chip(x, y, w, h, label, color, active, id) {
+  rect(x, y, w, h, active ? color.d : C.btn);
+  frame(x, y, w, h, active ? color.c : C.btnBd);
+  const tx = x + Math.round((w - textWidth(label)) / 2);
+  text(tx, y + Math.round((h - 7) / 2), label, active ? color.c : C.dim);
+  hits.push({ x, y, w, h, id });
+}
+
+function actChip(x, y, w, h, label, color, id) {
+  rect(x, y, w, h, C.btn);
+  frame(x, y, w, h, C.btnBd);
+  text(x + Math.round((w - textWidth(label)) / 2), y + Math.round((h - 7) / 2), label, color);
+  hits.push({ x, y, w, h, id });
+}
+
+function tbChip(x, w, i) {
+  const active = st.tb === i;
+  rect(x, 2, w, 24, active ? C.tb : C.btn);
+  frame(x, 2, w, 24, active ? C.tbBd : C.btnBd);
+  const s = TB[i].name;
+  text(x + Math.round((w - textWidth(s)) / 2), 10, s, active ? C.tbTx : C.dim);
+  hits.push({ x, y: 2, w, h: 24, id: 'tb' + i });
+}
+
+function drawStrip() {
+  rect(0, 0, W, STRIP_H, C.strip);
+  rect(0, STRIP_H - 1, W, 1, C.border);
+
+  /* 小方波图标 */
+  const la = C.accent;
+  rect(4, 17, 3, 2, la); rect(6, 12, 2, 7, la);
+  rect(8, 12, 4, 2, la); rect(11, 12, 2, 7, la);
+  rect(13, 17, 3, 2, la);
+
+  chip(22, 2, 28, 24, 'CH1', { c: C.ch1, d: C.ch1d }, st.ch1, 'ch1');
+  chip(53, 2, 28, 24, 'CH2', { c: C.ch2, d: C.ch2d }, st.ch2, 'ch2');
+  chip(86, 2, 21, 24, 'D0', { c: C.d0, d: C.d0d }, st.dig[0], 'd0');
+  chip(110, 2, 21, 24, 'D1', { c: C.d1, d: C.d1d }, st.dig[1], 'd1');
+  chip(134, 2, 21, 24, 'D2', { c: C.d2, d: C.d2d }, st.dig[2], 'd2');
+
+  tbChip(166, 27, 0);
+  tbChip(196, 21, 1);
+  tbChip(220, 21, 2);
+  tbChip(244, 33, 3);
+  tbChip(280, 33, 4);
+
+  actChip(340, 2, 34, 24, 'TRIG', C.text, 'trig');
+  actChip(377, 2, 34, 24, 'SAVE', C.accent, 'save');
+
+  /* 右上角 LINK 指示 */
+  const on = (dotPhase % 2) === 0;
+  rect(437, 12, 4, 4, on ? C.good : '#1e4d3a');
+  text(445, 10, 'UP', C.good);
+  text(459, 10, 'UDP', C.dim);
+}
+
+function gridX(k) { return PX + Math.round(k * (PW - 1) / 10); }
+function gridY(k) { return PY + Math.round(k * (PH - 1) / 8); }
+
+function fmtTime(s) {
+  if (s >= 1) return Math.round(s) + 'S';
+  const ms = s * 1000;
+  if (ms >= 1) return (ms % 1 ? ms.toFixed(1) : Math.round(ms)) + 'MS';
+  return Math.round(s * 1e6) + 'US';
+}
+
+function drawTimeLabels() {
+  const total = winSec(st.tb);
+  const fmt = fmtTime;
+  const ys = YBOT - 12;
+  const put = (x, s, align) => {
+    const w = textWidth(s);
+    let tx = x;
+    if (align === 'c') tx = x - Math.round(w / 2);
+    if (align === 'r') tx = x - w;
+    rect(tx - 2, ys - 1, w + 4, 9, C.bg);
+    text(tx, ys, s, C.faint);
+  };
+  put(PX + 4, '0', 'l');
+  put(PX + PW / 2, fmt(total / 2), 'c');
+  put(PX + PW - 4, fmt(total), 'r');
+}
+
+function envOf(a) {
+  const top = new Int16Array(PW), bot = new Int16Array(PW);
+  let pt = -1, pb = -1;                 // 上一列的原始包络, 用来连线
+  for (let x = 0; x < PW; x++) {
+    const i0 = Math.floor(x * (N - 1) / (PW - 1));
+    let i1 = Math.floor((x + 1) * (N - 1) / (PW - 1));
+    if (i1 <= i0) i1 = i0 + 1;
+    let lo = 4095, hi = 0;
+    for (let i = i0; i <= i1 && i < N; i++) {
+      const v = a[i]; if (v < lo) lo = v; if (v > hi) hi = v;
+    }
+    let t = YBOT - Math.round(hi * (YBOT - YTOP) / 4095);
+    let b = YBOT - Math.round(lo * (YBOT - YTOP) / 4095);
+    if (b < t) b = t;
+
+    const rt = t, rb = b;               // 原始值留给下一列
+    if (pt >= 0) {
+      if (pt < t) t = pt;               // 和上一列连起来, 避免陡沿断开
+      if (pb > b) b = pb;
+    }
+    top[x] = t; bot[x] = b;
+    pt = rt; pb = rb;
+  }
+  return { top, bot };
+}
+
+function drawAnalog(a, col, halo) {
+  const e = envOf(a);
+  for (let x = 0; x < PW; x++) {
+    const h = e.bot[x] - e.top[x] + 1;
+    rect(PX + x - 1, e.top[x] - 1, 4, h + 2, halo);
+  }
+  for (let x = 0; x < PW; x++) {
+    const h = e.bot[x] - e.top[x] + 1;
+    rect(PX + x, e.top[x], 2, Math.max(2, h), col);
+  }
+}
+
+function drawDigital() {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(PX, DIGY, PW, LANEH * 3);
+  ctx.clip();
+
+  for (let c = 0; c < 3; c++) {
+    if (!st.dig[c]) continue;
+    const col = [C.d0, C.d1, C.d2][c];
+    const halo = [C.d0h, C.d1h, C.d2h][c];
+    const laneTop = DIGY + c * LANEH;
+    const yH = laneTop + 7, yL = laneTop + LANEH - 8;
+
+    /* 先画暗描边, 再画亮线 */
+    for (let pass = 0; pass < 2; pass++) {
+      for (let x = 0; x < PW; x++) {
+        const i0 = Math.floor(x * (N - 1) / (PW - 1));
+        let i1 = Math.floor((x + 1) * (N - 1) / (PW - 1));
+        if (i1 >= N) i1 = N - 1;
+        const yA = bufD[c][i0] ? yH : yL;
+        const yB = bufD[c][i1] ? yH : yL;
+        const ys = Math.min(yA, yB), ye = Math.max(yA, yB);
+        if (pass === 0) rect(PX + x - 1, ys - 1, 4, ye - ys + 3, halo);
+        else if (yA !== yB) rect(PX + x, ys, 2, ye - ys + 1, col);
+        else rect(PX + x, yA, 2, 2, col);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function drawPlot() {
+  rect(PX, PY, PW, PH, C.bg);
+  for (let k = 0; k <= 10; k++) {
+    rect(gridX(k), PY, 1, PH, k === 5 ? C.center : C.grid);
+  }
+  for (let k = 0; k <= 8; k++) {
+    rect(PX, gridY(k), PW, 1, k === 4 ? C.center : C.grid);
+  }
+  frame(PX, PY, PW, PH, C.border);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(PX, PY, PW, PH);
+  ctx.clip();
+
+  /* 触发电平虚线 */
+  const lv = YBOT - Math.round(st.trigLevel * (YBOT - YTOP) / 4095);
+  for (let x = PX + 2; x < PX + PW - 2; x += 6) rect(x, lv, 3, 1, C.accentDim);
+  text(PX + 5, lv - 8, (st.trigLevel * 3300 / 4095 / 1000).toFixed(2) + 'V', C.accentDim);
+
+  if (st.ch2) drawAnalog(buf2, C.ch2, C.ch2h);
+  if (st.ch1) drawAnalog(buf1, C.ch1, C.ch1h);
+
+  ctx.restore();
+
+  /* 时间刻度压在曲线上, 所以放在最后画 */
+  drawTimeLabels();
+}
+
+function drawMeasure() {
+  const y1 = 240, y2 = 252;
+  if (st.ch1) {
+    text(4, y1, 'CH1 ' + fmtVpp(meas.v1), C.ch1);
+    text(70, y1, fmtHz(meas.f1), C.ch1);
+  } else {
+    text(4, y1, 'CH1 OFF', C.faint);
+  }
+  if (st.ch2) {
+    text(246, y1, 'CH2 ' + fmtVpp(meas.v2), C.ch2);
+    text(312, y1, fmtHz(meas.f2), C.ch2);
+  } else {
+    text(246, y1, 'CH2 OFF', C.faint);
+  }
+
+  const modes = ['AUTO', 'NORM', 'SINGL'];
+  text(392, y1, 'TRIG ' + modes[st.trigMode], C.dim);
+
+  const cols = [C.d0, C.d1, C.d2];
+  for (let c = 0; c < 3; c++) {
+    const x = 4 + c * 162;
+    if (!st.dig[c]) { text(x, y2, 'D' + c + ' OFF', C.faint); continue; }
+    text(x, y2, 'D' + c, cols[c]);
+    text(x + 18, y2, fmtHz(meas.fd[c]), cols[c]);
+    text(x + 78, y2, fmtPulse(meas.pw[c]), cols[c]);
+  }
+}
+
+function drawDigitalArea() {
+  rect(0, 142, W, 1, C.border);
+  rect(0, 143, W, 93, C.bg);
+  /* 三条通道之间的淡分隔线, 30px 一条看着不散 */
+  rect(PX, DIGY + LANEH, PW, 1, C.grid);
+  rect(PX, DIGY + LANEH * 2, PW, 1, C.grid);
+  drawDigital();
+}
+
+function drawFooter() {
+  rect(0, 262, W, 1, C.border);
+  rect(0, 263, W, 9, C.panel);
+
+  const now = performance.now();
+  if (now < st.saveUntil) {
+    const pct = Math.round(100 - (st.saveUntil - now) / 25);
+    text(4, 264, 'EXPORT ' + Math.min(99, pct) + '%', C.accent);
+    rect(4, 270, Math.min(PW, Math.round(PW * Math.min(99, pct) / 100)), 1, C.accent);
+  } else {
+    text(4, 264, 'F ' + pad(st.frames, 6) + '  CRC ' + pad(st.crc, 4) + '  DROP ' + st.drops, C.dim);
+  }
+  text(474 - textWidth('SRC UDP  30FPS'), 264, 'SRC UDP  30FPS', C.dim);
+}
+
+function menuChip(x, y, w, h, label, active, id) {
+  rect(x, y, w, h, active ? C.tb : C.btn);
+  frame(x, y, w, h, active ? C.tbBd : C.btnBd);
+  text(x + Math.round((w - textWidth(label)) / 2), y + Math.round((h - 7) / 2), label,
+       active ? C.tbTx : C.dim);
+  hits.push({ x, y, w, h, id });
+}
+
+function drawMenu() {
+  /* 弹出层盖住模拟区 + 数字区, 背景压暗 */
+  rect(PX, PY, PW, 202, 'rgba(3,7,10,0.82)');
+  const x = 244, y = 32, w = 232, h = 204;
+  rect(x, y, w, h, '#0c1720');
+  frame(x, y, w, h, C.btnBd);
+  rect(x, y, w, 1, C.accentDim);
+  text(x + 8, y + 9, 'TRIGGER', C.accent);
+
+  text(x + 8, y + 38, 'SRC', C.dim);
+  menuChip(x + 56, y + 33, 44, 20, 'CH1', st.trigSrc === 0, 'ts0');
+  menuChip(x + 103, y + 33, 44, 20, 'CH2', st.trigSrc === 1, 'ts1');
+  menuChip(x + 150, y + 33, 38, 20, 'D0', st.trigSrc === 2, 'ts2');
+
+  text(x + 8, y + 72, 'EDGE', C.dim);
+  menuChip(x + 56, y + 67, 60, 20, 'RISE', st.trigEdge === 0, 'te0');
+  menuChip(x + 120, y + 67, 60, 20, 'FALL', st.trigEdge === 1, 'te1');
+
+  text(x + 8, y + 106, 'MODE', C.dim);
+  menuChip(x + 56, y + 101, 50, 20, 'AUTO', st.trigMode === 0, 'tm0');
+  menuChip(x + 110, y + 101, 50, 20, 'NORM', st.trigMode === 1, 'tm1');
+  menuChip(x + 164, y + 101, 54, 20, 'SINGL', st.trigMode === 2, 'tm2');
+
+  text(x + 8, y + 140, 'LEVEL', C.dim);
+  menuChip(x + 56, y + 135, 26, 20, '-', false, 'lv-');
+  text(x + 92, y + 140, (st.trigLevel * 3300 / 4095 / 1000).toFixed(2) + 'V', C.text);
+  menuChip(x + 160, y + 135, 26, 20, '+', false, 'lv+');
+
+  menuChip(x + 56, y + 172, 84, 22, 'CLOSE', false, 'close');
+  hits.push({ x, y, w, h, id: 'menuBg' });
+}
+
+/* ======================= 主循环 ======================= */
+function render() {
+  hits.length = 0;
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStrip();
+  drawPlot();
+  drawMeasure();
+  drawDigitalArea();
+  drawFooter();
+  if (st.menu) drawMenu();
+}
+
+let prevTs = 0, acc = 0, dirty = true;
+function loop(ts) {
+  if (!prevTs) prevTs = ts;
+  let dt = ts - prevTs;
+  prevTs = ts;
+  if (dt > 60) dt = 60;
+  acc += dt;
+
+  while (acc >= 33.333) {
+    acc -= 33.333;
+    st.seq++;
+    st.frames++;
+    st.t0 += winSec(st.tb) * 2 / PW;   // 每帧整体平移 2 列
+    buildSamples();
+    dotPhase = Math.floor(ts / 500);
+    dirty = true;
+  }
+  if (dirty) { dirty = false; render(); }   // 数据 30fps, 不用 60fps 重画整屏
+  requestAnimationFrame(loop);
+}
+
+/* ======================= 触摸/点击 ======================= */
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width * W;
+  const y = (e.clientY - r.top) / r.height * H;
+
+  if (st.menu) {
+    const bg = hits.find(o => o.id === 'menuBg');
+    if (bg && !pointIn(x, y, bg)) { st.menu = false; render(); return; }
+  }
+
+  for (const o of hits) {
+    if (!pointIn(x, y, o)) continue;
+    const id = o.id;
+    if (id.startsWith('tb')) {
+      st.tb = +id[2];
+      st.t0 = 0;
+      buildSamples();
+    } else if (id === 'ch1') { st.ch1 = !st.ch1; buildSamples(); }
+    else if (id === 'ch2') { st.ch2 = !st.ch2; buildSamples(); }
+    else if (id === 'd0') { st.dig[0] = !st.dig[0]; buildSamples(); }
+    else if (id === 'd1') { st.dig[1] = !st.dig[1]; buildSamples(); }
+    else if (id === 'd2') { st.dig[2] = !st.dig[2]; buildSamples(); }
+    else if (id === 'trig') { st.menu = !st.menu; }
+    else if (id === 'save') { st.saveUntil = performance.now() + 2500; }
+    else if (id === 'ts0') st.trigSrc = 0;
+    else if (id === 'ts1') st.trigSrc = 1;
+    else if (id === 'ts2') st.trigSrc = 2;
+    else if (id === 'te0') st.trigEdge = 0;
+    else if (id === 'te1') st.trigEdge = 1;
+    else if (id === 'tm0') st.trigMode = 0;
+    else if (id === 'tm1') st.trigMode = 1;
+    else if (id === 'tm2') st.trigMode = 2;
+    else if (id === 'lv-') st.trigLevel = Math.max(0, st.trigLevel - 128);
+    else if (id === 'lv+') st.trigLevel = Math.min(4095, st.trigLevel + 128);
+    else if (id === 'close') st.menu = false;
+    render();
+    return;
+  }
+});
+
+function pointIn(x, y, o) {
+  return x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h;
+}
+
+/* 启动 */
+const qs = new URLSearchParams(location.search);
+if (qs.get('menu') === '1') st.menu = true;   // 便于截图预览触发菜单
+buildSamples();
+render();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

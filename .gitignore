@@ -1,0 +1,48 @@
+# ---------- IAR 构建产物 ----------
+EWARM/receive/Obj/
+EWARM/receive/Exe/
+EWARM/receive/List/
+*.pbw
+*.pbd
+*.pbd.browse
+*.dep
+*.bak
+
+# IAR 调试/下载配置: 打开工程时会自动重新生成
+EWARM/*.ewd
+EWARM/*.ewt
+EWARM/settings/*.wsdt
+EWARM/settings/*.crun
+EWARM/settings/*.dbgdt
+EWARM/settings/*.dnx
+EWARM/settings/*.xcl
+EWARM/settings/*.cspy.bat
+EWARM/settings/*.cspy.ps1
+
+# ---------- Python ----------
+tools/__pycache__/
+*.pyc
+
+# ---------- 系统文件 ----------
+Thumbs.db
+desktop.ini
+
+# ---------- 测试素材（体积大，不入库） ----------
+tools/**/*.mp4
+tools/**/*.png
+tools/**/*.jpg
+tools/**/*.gif
+tools/**/*.bmp
+
+# ---------- 导出结果 ----------
+exports/
+export.bmp
+export.csv
+EWARM/flash.log
+
+# ---------- 第三方二进制库（工程只用 IAR 版本，其余不入库） ----------
+Drivers/CMSIS/Lib/
+Middlewares/ST/touchgfx/lib/core/cortex_m7/Keil/
+Middlewares/ST/touchgfx/lib/core/cortex_m7/Keil6.x/
+Middlewares/ST/touchgfx/lib/linux/
+Middlewares/ST/touchgfx/lib/win/
