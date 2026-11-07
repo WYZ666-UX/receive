@@ -8,8 +8,9 @@ EWARM/receive/List/
 *.dep
 *.bak
 
-# IAR 调试/下载配置: 打开工程时会自动重新生成
+# IAR 调试/下载配置: receive.ewd 含 ST-Link + Flash Loader 设置, 必须入库
 EWARM/*.ewd
+!EWARM/receive.ewd
 EWARM/*.ewt
 EWARM/settings/*.wsdt
 EWARM/settings/*.crun

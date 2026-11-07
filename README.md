@@ -32,6 +32,7 @@ tools/                PC 侧测试与导出工具
 ## 构建与烧录
 
 - IDE：IAR EWARM 8.32，打开 `EWARM/receive.ewp`，配置 `receive`
+- 仓库已包含 `EWARM/receive.ewd`（ST-Link + Flash Loader 配置）。若 IAR 仍显示 Simulator，打开 `Project → Options → Debugger`，Driver 选 `ST-Link`，并在 Download 页勾选 `Use Flash Loader`
 - 命令行编译（项目路径需用绝对路径；相对路径在全新克隆上会解析不到 `TouchGFX` 源文件）：
 
 ```
