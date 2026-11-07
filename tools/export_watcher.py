@@ -25,6 +25,11 @@ except ImportError:
 CSV_END = b"# END OF DATA"
 DEFAULT_BMP_SIZE = 54 + 480 * 272 * 3      # 391734
 
+# 保存目录跟随脚本所在工程：tools 的上一级 + exports
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEFAULT_DIR = os.path.join(BASE_DIR, "exports")
+DEFAULT_LOG = os.path.join(DEFAULT_DIR, "watcher.log")
+
 
 def log(path, msg):
     line = time.strftime("%Y-%m-%d %H:%M:%S ") + msg
@@ -100,8 +105,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", default="COM3")
     ap.add_argument("--baud", type=int, default=460800)
-    ap.add_argument("--dir", default=r"d:\receive - trae\exports")
-    ap.add_argument("--log", default=r"d:\receive - trae\exports\watcher.log")
+    ap.add_argument("--dir", default=DEFAULT_DIR)
+    ap.add_argument("--log", default=DEFAULT_LOG)
     args = ap.parse_args()
 
     os.makedirs(args.dir, exist_ok=True)

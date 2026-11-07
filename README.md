@@ -63,7 +63,7 @@ cspybat -f EWARM/settings/receive.receive.general.xcl --backend -f EWARM/setting
 2. 顶栏切换时基、通道；`TRIG` 打开触发菜单；`SAVE` 导出；
 3. 导出：USART1（PA9 → ST-Link 虚拟串口）在导出期间为 460800；
    - 单次抓取：`python tools/serial_export_capture.py --port COM3`
-   - 常驻自动保存：双击 `tools/启动导出监听.bat`，之后点 SAVE 即落盘到 `exports/`
+   - 常驻自动保存：双击 `tools/启动导出监听.bat`，之后点 SAVE 即落盘到工程根目录的 `exports/`（工程移动后保存路径随之变化）
 
 ## 工具
 
